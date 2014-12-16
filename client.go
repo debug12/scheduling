@@ -9,14 +9,16 @@ import (
   "bytes"
 )
 
-const serverIP = "192.168.56.1"
+const serverIP = "54.149.196.174"
+const DNS = "ec2-54-149-196-174.us-west-2.compute.amazonaws.com"
+
 
 func Log(v ...interface{}) {
   fmt.Println(v...)
 }
 
 func main() {
-  conn, err := net.Dial("tcp", serverIP + ":6666")
+  conn, err := net.Dial("tcp", DNS + ":48104")
   if err != nil {
     Log("Error dialing")
     return
@@ -33,7 +35,6 @@ func main() {
     }
     conn.Write([]byte(username))
     for {
-      //fmt.Printf("You: ")
       reader := bufio.NewReader(os.Stdin)
       message, err := reader.ReadString('\n')
       if err != nil {

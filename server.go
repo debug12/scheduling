@@ -44,9 +44,10 @@ func (c Client) receiveMessages() {
 }
 
 func main() {
-  listener, err := net.Listen("tcp", ":6666")
+  listener, err := net.Listen("tcp", ":48104")
   if err != nil {
-    Log("> Error accepting connection")
+    Log("> Error listening for connection")
+    return
   }
   listOfClients := list.New()
   
@@ -54,6 +55,7 @@ func main() {
     conn, err := listener.Accept()
     if err != nil {
       Log("> Error accepting connection")
+      return
     }
     Log("> Accepted a connection")
     userBuffer := make([]byte, 10)
@@ -73,7 +75,21 @@ func main() {
     newClient := Client{conn, username, make(chan string), make(chan bool)}
     listOfClients.PushBack(newClient)
     
-    // Receive and print messages from newClient
+    var csvUsernamesBuffer bytes.Buffer
+    csvUsernamesBuffer.WriteString("Currently connected: ")
+    for it := listOfClients.Front(); it != nil; it = it.Next() {
+      if it != listOfClients.Front() {
+        csvUsernamesBuffer.WriteString(", ")
+      }
+      client := it.Value.(Client)
+      csvUsernamesBuffer.WriteString(client.Username)
+    }
+    newClient.Conn.Write([]byte(csvUsernamesBuffer.String()))
+    
+    
+    
+    
+    // Receive messages from newClient
     go newClient.receiveMessages()
     
     // Relay from newClient to others

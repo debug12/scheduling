@@ -9,9 +9,6 @@ filesets:
         - LICENSE
     excludes:
         - \.git
-        - simple_client.go
-        - simple_server.go
-        - testchat.go
     depth: 0
 settings:
         targetdir: ""

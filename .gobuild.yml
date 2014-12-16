@@ -1,0 +1,21 @@
+author: jminjie@umich.edu
+description: >
+        A test of gobuild, a service for building go source code online
+
+filesets:
+    includes:
+        - client.go
+        - README.md
+        - LICENSE
+    excludes:
+        - \.git
+        - simple_client.go
+        - simple_server.go
+        - testchat.go
+    depth: 0
+settings:
+        targetdir: ""
+        build: |
+            test -d Godeps && go(){ godep go "$@";} ; go install -v
+        outfiles:
+            - packer

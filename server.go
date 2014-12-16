@@ -16,6 +16,7 @@ type Client struct {
   Conn net.Conn
   Username string
   OutgoingMessages chan string
+  Quit chan bool
 }
 
 func (c Client) receiveMessages() {
@@ -34,6 +35,7 @@ func (c Client) receiveMessages() {
     _, err := c.Conn.Read(buffer)
     if err != nil {
       Log("> Ending connection with", c.Username)
+      c.Quit <- true
       c.OutgoingMessages <- ("> " + c.Username + " has left\n")
       return
     }
@@ -68,21 +70,36 @@ func main() {
         break
       }
     }
-    newClient := Client{conn, username, make(chan string)}
+    newClient := Client{conn, username, make(chan string), make(chan bool)}
     listOfClients.PushBack(newClient)
     
-    // Receive and print messages
+    // Receive and print messages from newClient
     go newClient.receiveMessages()
     
-    // Relay messages to clients
+    // Relay from newClient to others
     go func() {
       for {
-        outgoingMessage := <- newClient.OutgoingMessages
-        for it := listOfClients.Front(); it != nil; it = it.Next(){
-          client := it.Value.(Client)
-          if !bytes.Equal([]byte(client.Username), []byte(newClient.Username)) {
-            client.Conn.Write([]byte(outgoingMessage))
-          }
+        select {
+          case outgoingMessage := <- newClient.OutgoingMessages:
+            for it := listOfClients.Front(); it != nil; it = it.Next(){
+              client := it.Value.(Client)
+              if !bytes.Equal([]byte(client.Username), []byte(newClient.Username)) {
+                client.Conn.Write([]byte(outgoingMessage))
+              }
+            }
+          case <- newClient.Quit:
+            for it := listOfClients.Front(); it != nil; it = it.Next() {
+              client := it.Value.(Client)
+              if bytes.Equal([]byte(client.Username), []byte(newClient.Username)) {
+                listOfClients.Remove(it)
+              }
+            }
+            outgoingMessage := <- newClient.OutgoingMessages
+            for it := listOfClients.Front(); it != nil; it = it.Next() {
+              client := it.Value.(Client) 
+              client.Conn.Write([]byte(outgoingMessage))
+            }
+            return
         }
       }
     }()

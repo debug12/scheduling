@@ -6,18 +6,19 @@ import (
   "bufio"
   "os"
   "strings"
+  "bytes"
 )
 
 const serverIP = "192.168.56.1"
 
-func Logln(v ...interface{}) {
+func Log(v ...interface{}) {
   fmt.Println(v...)
 }
 
 func main() {
   conn, err := net.Dial("tcp", serverIP + ":6666")
   if err != nil {
-    Logln("Error dialing")
+    Log("Error dialing")
     return
   }
   
@@ -28,7 +29,7 @@ func main() {
     reader := bufio.NewReader(os.Stdin)
     username, err := reader.ReadString('\n')
     if err != nil {
-      Logln("Invalid username")
+      Log("Invalid username")
     }
     conn.Write([]byte(username))
     for {
@@ -36,10 +37,12 @@ func main() {
       reader := bufio.NewReader(os.Stdin)
       message, err := reader.ReadString('\n')
       if err != nil {
-        Logln("\nExiting")
+        Log("\nExiting")
         quit <- true
       }
-      conn.Write([]byte(message))
+      if !bytes.Equal([]byte(message), []byte("\n")) {
+        conn.Write([]byte(message))
+      }
     }
   }()
   // Receive messages
@@ -51,14 +54,14 @@ func main() {
     _, err = conn.Read([]byte(receivedMessageBuffer))
     for err == nil {
       receivedMessage := strings.TrimSpace(string(receivedMessageBuffer))
-      Logln(receivedMessage)
+      Log(receivedMessage)
       for i := 0; i < 1024; i++ {
         receivedMessageBuffer[i] = ' '
       }
       _, err = conn.Read([]byte(receivedMessageBuffer))
     }
     if err != nil {
-      Logln("\nExiting")
+      Log("\nExiting")
       quit <- true
     }
   }()

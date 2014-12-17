@@ -6,11 +6,9 @@ import (
   "bufio"
   "os"
   "strings"
-  "bytes"
 )
 
-const serverIP = "54.149.196.174"
-const DNS = "ec2-54-149-196-174.us-west-2.compute.amazonaws.com"
+const DNS = "ec2-54-149-89-198.us-west-2.compute.amazonaws.com"
 
 
 func Log(v ...interface{}) {
@@ -18,7 +16,7 @@ func Log(v ...interface{}) {
 }
 
 func main() {
-  conn, err := net.Dial("tcp", DNS + ":48104")
+  conn, err := net.Dial("tcp", DNS + ":48322")
   if err != nil {
     Log("Error dialing")
     return
@@ -32,6 +30,7 @@ func main() {
     username, err := reader.ReadString('\n')
     if err != nil {
       Log("Invalid username")
+      return
     }
     conn.Write([]byte(username))
     for {
@@ -41,7 +40,7 @@ func main() {
         Log("\nExiting")
         quit <- true
       }
-      if !bytes.Equal([]byte(message), []byte("\n")) {
+      if !strings.EqualFold(message, "\n") {
         conn.Write([]byte(message))
       }
     }
@@ -55,7 +54,7 @@ func main() {
     _, err = conn.Read([]byte(receivedMessageBuffer))
     for err == nil {
       receivedMessage := strings.TrimSpace(string(receivedMessageBuffer))
-      Log(receivedMessage)
+      Log("\r" + receivedMessage)
       for i := 0; i < 1024; i++ {
         receivedMessageBuffer[i] = ' '
       }

@@ -40,11 +40,12 @@ func (c Client) receiveMessages() {
       return
     }
   }
+  c.Quit <- true
   Log("> Exiting")
 }
 
 func main() {
-  listener, err := net.Listen("tcp", ":48104")
+  listener, err := net.Listen("tcp", ":48322")
   if err != nil {
     Log("> Error listening for connection")
     return
@@ -62,15 +63,23 @@ func main() {
     for i := 0; i < 10; i++ {
       userBuffer[i] = ' '
     }
-    conn.Read(userBuffer)
+    _, errUsername := conn.Read(userBuffer)
+    if errUsername != nil {
+      continue
+    }
     user := strings.Fields(string(userBuffer))
     username := user[0]
+    skipOneIteration := false
     for it := listOfClients.Front(); it != nil; it = it.Next(){
       client := it.Value.(Client)
       if bytes.Equal([]byte(client.Username), []byte(username)){
         conn.Close()
+        skipOneIteration = true
         break
       }
+    }
+    if skipOneIteration {
+      continue
     }
     newClient := Client{conn, username, make(chan string), make(chan bool)}
     listOfClients.PushBack(newClient)
@@ -85,9 +94,6 @@ func main() {
       csvUsernamesBuffer.WriteString(client.Username)
     }
     newClient.Conn.Write([]byte(csvUsernamesBuffer.String()))
-    
-    
-    
     
     // Receive messages from newClient
     go newClient.receiveMessages()
